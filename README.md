@@ -1,5 +1,7 @@
 ## Welcome to GitHub Pages
 
+[go to spells.html](https://mgwa64.github.io/docs/spells.html)
+
 You can use the [editor on GitHub](https://github.com/MgWa64/MgWa64.github.io/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
 
 Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
