@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Game</title>
+</head>
+<body>
+    <canvas></canvas>
+    <script>
+        function Viewport(w=320, h=480, loc=document.body){
+            this.canvas = document.createElement('canvas');
+            this.canvas.style = 'position: absolute; top: 0px; left: 0px; border: 0px solid black;';
+            this.canvas.width = w;
+            this.canvas.height = h;
+            this.context = this.canvas.getContext('2d');
+            this.width = w;
+            this.height = h;
+            this.clear = function(){
+                this.context.clearRect(0, 0, this.width, this.height);
+                this.context.fillStyle = '#99A';
+                this.context.fillRect(0, 0, Screen.width, Screen.height);
+            };
+            this.sprite = function(image, src, spr){
+                this.context.drawImage(image, src.x, src.y, src.w, src.h, spr.x, spr.y, spr.w, spr.h);
+            }
+            loc.appendChild(this.canvas);
+        }
+        function loop(update = function(dt){}){
+            var now = performance.now();
+            var lastTime = now;
+            let f = function(){
+                now = performance.now();
+                let dt = (now - lastTime) / 1000;
+                lastTime = now;
+                update(dt);
+                setTimeout(f, 1000 / 60);
+            }
+            setTimeout(f, 1);
+        }
+    </script>
+    <script>
+        var keys = [];
+        for(i=0;i<256;i++)
+            keys[i] = false;
+        window.onkeydown = function(e){
+            e.preventDefault();
+            keys[e.keyCode] = true;
+        }
+        window.onkeyup = function(e){
+            e.preventDefault();
+            keys[e.keyCode] = false;
+        }
+        var workspace = "";
+        var Screen = new Viewport(512, 512);
+        var p_img = new Image();
+        p_img.src = workspace + "assets/george.png";
+        var tile_img = [];
+        tile_img[0] = new Image();
+        tile_img[0].src = workspace + "assets/grass.png";
+        tile_img[1] = new Image();
+        tile_img[1].src = workspace + "assets/dirt.png";
+        tile_img[2] = new Image();
+        tile_img[2].src = workspace + "assets/water.png";
+        tile_img[3] = new Image();
+        tile_img[3].src = workspace + "assets/wood_floor.png";
+        function Tile(id = 0){
+            this.spr_id = id;
+            this.walkable = true;
+            if(id == 2){
+                this.walkable = false;
+            }
+        }
+        function Map(tiles = 0){
+            this.tiles = [];
+            for(i=0;i<256;i++){
+                if(tiles == 0){
+                    this.tiles[i] = new Tile();
+                }else{
+                    this.tiles[i] = new Tile(tiles[i]);
+                }
+            }
+            this.update = function(dt){
+
+            }
+            this.draw = function(){
+                for(i=0;i<256;i++){
+                    let x = i % 16;
+                    let y = Math.floor(i / 16);
+                    Screen.sprite(tile_img[this.tiles[i].spr_id],
+                        {x:0*32, y:0*32, w:32, h:32},
+                        {x:x*32, y:y*32, w:32, h:32},
+                    );
+                }
+            };
+            
+        }
+        var map = new Map([
+            0,3,3,3,3,3,3,3,3,0,0,0,0,0,0,0,
+            0,3,1,1,1,1,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,1,1,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,2,2,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,2,2,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,2,2,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,2,2,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,2,2,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,2,2,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,2,2,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,1,1,1,1,3,0,0,0,0,0,0,0,
+            0,3,1,1,1,1,1,1,3,0,0,0,0,0,0,0,
+            0,3,3,3,3,3,3,3,3,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        ]);
+        var player = {
+            image: p_img,
+            image_rect: {x:0, y:0, w:32, h:32},
+            pos: {x:0, y:0, w:32, h:32},
+            speed: 64.0,
+            frame: 0, dir: 3,
+            time: 0, delay: 0.13,
+            update: function(dt){
+                let move = false;
+                let mx = 0;
+                let my = 0
+                if(keys[37] || keys[65]){
+                    this.dir = 0;
+                    mx -= this.speed * dt;
+                    move = true;
+                }if(keys[38] || keys[87]){
+                    this.dir = 1;
+                    my -= this.speed * dt;
+                    move = true;
+                }if(keys[39] || keys[68]){
+                    this.dir = 2;
+                    mx += this.speed * dt;
+                    move = true;
+                }if(keys[40] || keys[83]){
+                    this.dir = 3;
+                    my += this.speed * dt;
+                    move = true;
+                }
+                if(move){
+                    //Check collisions
+                    let w1, w2;
+                    let t1, t2, t3, t4, t5, t6, t7, t8;
+                    let i1, i2, i3, i4, i5, i6, i7, i8;
+
+                    i1 = Math.floor((this.pos.x)/32) + Math.floor((this.pos.y + my)/32)*16;
+                    i2 = Math.floor((this.pos.x + this.pos.w)/32) + Math.floor((this.pos.y + my)/32)*16;
+                    i3 = Math.floor((this.pos.x)/32) + Math.floor((this.pos.y + my + this.pos.h)/32)*16;
+                    i4 = Math.floor((this.pos.x + this.pos.w)/32) + Math.floor((this.pos.y + my + this.pos.h)/32)*16;
+                    i5 = Math.floor((this.pos.x + mx)/32) + Math.floor((this.pos.y)/32)*16;
+                    i6 = Math.floor((this.pos.x + mx + this.pos.w)/32) + Math.floor((this.pos.y)/32)*16;
+                    i7 = Math.floor((this.pos.x + mx)/32) + Math.floor((this.pos.y + this.pos.h)/32)*16;
+                    i8 = Math.floor((this.pos.x + mx + this.pos.w)/32) + Math.floor((this.pos.y + this.pos.h)/32)*16;
+                    
+                    t1 = map.tiles[i1].walkable;
+                    t2 = map.tiles[i2].walkable;
+                    t3 = map.tiles[i3].walkable;
+                    t4 = map.tiles[i4].walkable;
+                    t5 = map.tiles[i5].walkable;
+                    t6 = map.tiles[i6].walkable;
+                    t7 = map.tiles[i7].walkable;
+                    t8 = map.tiles[i8].walkable;
+
+                    w1 = t1 && t2 && t3 && t4;
+                    w2 = t5 && t6 && t7 && t8;
+
+                    if(w2){
+                        this.pos.x += mx;
+                    }
+                    if(w1){
+                        this.pos.y += my;
+                    }
+                }
+                    
+                this.time += dt;
+                while(move && this.time >= this.delay){
+                    this.time -= this.delay;
+                    this.frame++;
+                }
+                this.frame = this.frame % 4;
+                this.dir = this.dir % 4;
+                this.image_rect.y = this.image_rect.h * this.frame;
+                this.image_rect.x = this.image_rect.w * this.dir;
+            },
+            draw: function(){
+                Screen.sprite(this.image, this.image_rect, this.pos);
+            }
+        };
+        
+        window.onload = function(){
+            loop(function(dt){
+                player.update(dt);
+                map.update();
+                Screen.clear();
+                map.draw();
+                player.draw();
+            });
+        }
+
+    </script>
+    <script>
+
+    </script>
+</body>
+</html>
